@@ -6,7 +6,7 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 const cli=resolve('src/cli.mjs');
-function run(args, env) {return new Promise(resolve=>{const child=spawn(process.execPath,[cli,...args],{env:{...process.env,...env}});let stdout='',stderr='';child.stdout.on('data',c=>stdout+=c);child.stderr.on('data',c=>stderr+=c);child.on('close',code=>resolve({code,stdout,stderr}));});}
+function run(args, env) {return new Promise(resolve=>{const child=spawn(process.execPath,[cli,'--backend','api',...args],{env:{...process.env,...env}});let stdout='',stderr='';child.stdout.on('data',c=>stdout+=c);child.stderr.on('data',c=>stderr+=c);child.on('close',code=>resolve({code,stdout,stderr}));});}
 test('CLI reads approved file through mock API and streams final answer',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'zai-e2e-'));await writeFile(join(dir,'hello.txt'),'hello world');let requests=[];
  const server=createServer(async(req,res)=>{let text='';for await(const chunk of req)text+=chunk;const body=JSON.parse(text);requests.push(body);assert.equal(req.headers.authorization,'Bearer local-test');res.writeHead(200,{'Content-Type':'text/event-stream'});
