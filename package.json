@@ -1,0 +1,31 @@
+{
+  "name": "zai-workbench-cli",
+  "version": "0.1.0",
+  "description": "A deliberate, permission-first coding assistant for Z.ai",
+  "type": "module",
+  "bin": {
+    "zai": "src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/cli.mjs && node --test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Misbah-Engr/zai-cli.git"
+  },
+  "homepage": "https://github.com/Misbah-Engr/zai-cli#readme",
+  "bugs": {
+    "url": "https://github.com/Misbah-Engr/zai-cli/issues"
+  }
+}
