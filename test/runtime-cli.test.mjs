@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {requireRuntimeNode} from '../src/runtime-cli.mjs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdtemp, writeFile, rm} from 'node:fs/promises';
@@ -47,7 +48,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
     assert.doesNotMatch(result.stderr, /Set ZAI_API_KEY|sensitive-runtime-log-marker|private-reasoning-marker|\x1b/);
     assert.match(result.stderr, /Working/);
     assert.match(result.stderr, /Thinking/);
-    assert.match(result.stderr, /Raw logs are hidden/);
+    assert.doesNotMatch(result.stderr, /Runtime diagnostic:/);
   } finally {await rm(dir, {recursive: true, force: true});}
 });
 test('runtime rejects unsupported API flags instead of silently ignoring them', async () => {
@@ -58,7 +59,7 @@ test('runtime rejects unsupported API flags instead of silently ignoring them', 
   }
 });
 test('runtime local doctor and version do not require credentials or invoke runtime', async () => {
-  assert.equal((await run(['--version'])).stdout.trim(), '0.2.0');
+  assert.equal((await run(['--version'])).stdout.trim(), '0.2.1');
   const result = await run(['doctor']);
   assert.equal(result.code, 0);
   assert.match(result.stderr, /Backend: runtime/);
@@ -73,4 +74,36 @@ test('runtime errors never fall back to API even with an API key set', async () 
   const result = await run(['--runtime-path', join(tmpdir(), 'missing-zcode-runtime-file'), '-p', 'Hello'], {ZAI_API_KEY: 'must-not-be-used', ZAI_BASE_URL: 'http://127.0.0.1:1/v1'});
   assert.equal(result.code, 1);
   assert.doesNotMatch(result.stderr, /must-not-be-used|Endpoint:|fetch failed/);
+});
+
+test('startup failure shows meaningful safe diagnostics without an API fallback', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'zai-startup-error-'));
+  const executable = join(dir, 'runtime.cjs');
+  try {
+    for (const diagnostic of ["Error: Cannot find module 'zcode-app-cli'", "error: unknown command 'app-server'", 'Error: listen EPERM: operation not permitted /tmp/zcode.sock']) {
+      await writeFile(executable, `process.stderr.write(${JSON.stringify(diagnostic + '\n    at fake (node:internal:1)\nNode.js v22.19.0\n')}); process.exitCode = 1;`);
+      const result = await run(['--runtime-path', executable, '-p', 'Hello'], {ZAI_API_KEY: 'must-not-leak'});
+      assert.equal(result.code, 1);
+      assert.ok(result.stderr.includes(`Runtime diagnostic: ${diagnostic}`), result.stderr);
+      assert.doesNotMatch(result.stderr, /Endpoint:|must-not-leak|Raw logs are hidden/);
+    }
+    await writeFile(executable, `process.stderr.write('Error: Authorization: Bearer short-secret\\n'); process.stderr.write('Error: password="secret words"\\n'); process.stderr.write('Error: https://user:pass@example.org?token=sensitive\\n'); process.stderr.write('Error: ' + process.env.ZAI_API_KEY + '\\n'); process.exitCode = 1;`);
+    for (const flags of [[], ['--debug-runtime']]) {
+      const result = await run([...flags, '--runtime-path', executable, '-p', 'Hello'], {ZAI_API_KEY: 'must-not-leak'});
+      assert.equal(result.code, 1);
+      assert.match(result.stderr, /Runtime diagnostic:/);
+      assert.doesNotMatch(result.stderr, /short-secret|secret words|user:pass|example.org|sensitive|must-not-leak/);
+    }
+  } finally {await rm(dir, {recursive:true, force:true});}
+});
+test('debug-runtime is available only for the runtime backend', async () => {
+  assert.match((await run(['--help'])).stdout, /--debug-runtime/);
+  assert.match((await run(['--backend', 'api', '--debug-runtime', '-p', 'Hello'])).stderr, /only supported by --backend runtime/);
+});
+
+test('runtime rejects unsupported frontend Node versions before launching the runtime', () => {
+  for (const version of ['18.19.1', '20.20.0', '22.18.0']) {
+    assert.throws(() => requireRuntimeNode(version), error => error.message.includes(version) && /22.19.0 or newer/.test(error.message) && /Node.js 24 LTS/.test(error.message));
+  }
+  for (const version of ['22.19.0', '22.20.1', '24.0.0']) assert.doesNotThrow(() => requireRuntimeNode(version));
 });

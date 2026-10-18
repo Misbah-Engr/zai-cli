@@ -4,8 +4,17 @@ import {constants} from 'node:fs';
 import {isAbsolute} from 'node:path';
 import {RuntimeBridge} from './runtime-bridge.mjs';
 import {clean} from './display.mjs';
+import {RuntimeDiagnostics, redactRuntimeDiagnostic} from './runtime-diagnostics.mjs';
+
+export function requireRuntimeNode(version = process.versions.node) {
+  const [major, minor, patch] = version.split('.').map(Number);
+  if (!Number.isInteger(major) || major < 22 || (major === 22 && minor < 19) || !Number.isInteger(patch)) {
+    throw new Error(`Z.ai Workbench runtime mode requires Node.js 22.19.0 or newer; this process is using Node.js ${version}. Install Node.js 24 LTS, reopen your terminal, and check node --version before retrying. ZCODE_NODE does not upgrade the Node.js process running Workbench.`);
+  }
+}
 
 export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
+  requireRuntimeNode();
   for (const flag of ['profile', 'reasoning', 'allow-read', 'max-tools', 'no-save']) {
     if (v[flag] !== undefined) throw new Error(`--${flag} is supported only with --backend api. Runtime settings and storage are managed by ZCode.`);
   }
@@ -33,7 +42,7 @@ export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
   }
   const rl = interactive ? createInterface({input: process.stdin, output: process.stderr, terminal: true}) : null;
   let closed = false, controller, bridge, snapshot, activity;
-  let diagnosticNoted = false;
+  let diagnostics;
   const animated = interactive && !v.plain && !process.env.NO_COLOR;
   const ask = async text => {
     if (!rl || closed || controller?.signal.aborted) return '';
@@ -45,6 +54,7 @@ export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
   process.on('SIGINT', interrupt);
   try {
     const createBridge = () => {
+    diagnostics = new RuntimeDiagnostics({onLine: v['debug-runtime'] ? line => {activity?.stop(); note(`Runtime diagnostic: ${line}`);} : undefined});
     const next = new Bridge({command: executable, cwd,
       onPermission: async request => {
         if (!interactive || closed || controller?.signal.aborted) return {decision: 'deny', reason: 'No interactive approval available'};
@@ -61,17 +71,11 @@ export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
     next.on('text', delta => {activity?.stop(); process.stdout.write(clean(delta));});
     next.on('reasoning', () => activity?.reasoning());
     next.on('tool', tool => {activity?.stop(); note(`\n  > ${tool.toolName || tool.name || 'runtime tool'}`); activity?.start();});
-    next.on('diagnostic', () => {
-      if (!diagnosticNoted) {
-        activity?.stop();
-        note('Runtime diagnostics received. Raw logs are hidden to protect sensitive data.');
-        diagnosticNoted = true;
-      }
-    });
+    next.on('diagnostic', chunk => diagnostics.write(chunk));
     return next;
     };
     bridge = createBridge();
-    note('\n  Z.ai Workbench / 0.2.0 | runtime\n' + `  ${cwd}\n\nUsing the installed ZCode runtime and its existing login.\nThe runtime controls sandbox, tools, permissions, and saved sessions.\nIts guarded mode may allow actions without a prompt under its own rules.\nNo direct-API fallback.\n`);
+    note('\n  Z.ai Workbench / 0.2.1 | runtime\n' + `  ${cwd}\n\nUsing the installed ZCode runtime and its existing login.\nThe runtime controls sandbox, tools, permissions, and saved sessions.\nIts guarded mode may allow actions without a prompt under its own rules.\nNo direct-API fallback.\n`);
     snapshot = await bridge.startSession({...(model ? {model} : {}), ...(v.resume ? {resumeSessionId: v.resume} : {}), mode: 'guarded'});
     const sessionID = () => snapshot?.session?.sessionId || snapshot?.sessionId || 'managed by runtime';
     note(`Runtime session: ${sessionID()}`);
@@ -108,7 +112,7 @@ export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
         note(`\n  ${((Date.now() - start) / 1000).toFixed(1)}s | session ${sessionID()}\n`);
       } catch (error) {
         activity.stop();
-        note(`\n${controller.signal.aborted ? 'Cancelled. Completed actions are not rolled back.' : `Error: ${error.message}`}`);
+        note(`\n${controller.signal.aborted ? 'Cancelled. Completed actions are not rolled back.' : `Error: ${redactRuntimeDiagnostic(error.message)}`}`);
         if (v.prompt) process.exitCode = controller.signal.aborted ? 130 : 1;
       } finally {activity.stop(); activity = undefined; controller = undefined;}
     }
@@ -125,9 +129,16 @@ export async function runRuntimeCLI(v, command, {Bridge = RuntimeBridge} = {}) {
       if (input.startsWith('/')) {note('Unknown command. Try /help.'); continue;}
       await turn(input);
     }
+  } catch (error) {
+    diagnostics?.flush();
+    const detail = diagnostics?.last();
+    const hint = detail && /\blisten\b/i.test(detail) && /\b(?:EPERM|EACCES)\b/.test(detail)
+      ? '\nThe runtime could not open its local listener. Check OS or sandbox permissions for the socket/address shown above.' : '';
+    throw new Error(`${redactRuntimeDiagnostic(error.message)}${detail ? `\nRuntime diagnostic: ${detail}` : ''}${hint}`);
   } finally {
     activity?.stop();
     await bridge?.close();
+    if (v['debug-runtime']) diagnostics?.flush();
     rl?.close();
     process.removeListener('SIGINT', interrupt);
   }

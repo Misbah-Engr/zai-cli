@@ -8,7 +8,7 @@ import {newSession, loadSession, saveSession, listSessions, stateDir} from './se
 
 import {clean} from './display.mjs';
 import {runRuntimeCLI} from './runtime-cli.mjs';
-const help = `Z.ai Workbench  0.2.0
+const help = `Z.ai Workbench  0.2.1
 A lightweight terminal for your existing ZCode runtime.
 
 Usage
@@ -25,6 +25,7 @@ Common options
   --resume ID         Resume a session in the selected backend
   --model NAME        Runtime: PROVIDER/MODEL; API: model ID
   --runtime-path PATH Absolute path to a trusted zcode executable
+  --debug-runtime     Show redacted runtime diagnostics (review before sharing)
   --plain             Disable terminal styling
   -h, --help          Show help
   -v, --version       Show version
@@ -49,14 +50,15 @@ Commands: /help, /new, /status, /exit. Ctrl+C cancels the active turn.
 
 async function main() {
   const {values: v, positionals} = parseArgs({allowPositionals: true, options: {
-    backend:{type:'string'},'runtime-path':{type:'string'},help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},prompt:{type:'string',short:'p'},cwd:{type:'string'},model:{type:'string'},reasoning:{type:'string'},profile:{type:'string'},resume:{type:'string'},'allow-read':{type:'boolean'},'max-tools':{type:'string'},'no-save':{type:'boolean'},plain:{type:'boolean'}
+    backend:{type:'string'},'runtime-path':{type:'string'},'debug-runtime':{type:'boolean'},help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},prompt:{type:'string',short:'p'},cwd:{type:'string'},model:{type:'string'},reasoning:{type:'string'},profile:{type:'string'},resume:{type:'string'},'allow-read':{type:'boolean'},'max-tools':{type:'string'},'no-save':{type:'boolean'},plain:{type:'boolean'}
   }});
   if (v.help) { process.stdout.write(help); return; }
-  if (v.version) { console.log('0.2.0'); return; }
+  if (v.version) { console.log('0.2.1'); return; }
   if (positionals.length > 1 || (positionals[0] && !['sessions','doctor'].includes(positionals[0]))) throw new Error('Unknown command. Use zai --help.');
   const backend = v.backend || 'runtime';
   if (!['runtime','api'].includes(backend)) throw new Error('--backend must be runtime or api.');
   if (backend === 'runtime') return runRuntimeCLI(v, positionals[0]);
+  if (v['debug-runtime']) throw new Error('--debug-runtime is only supported by --backend runtime.');
   if (v['runtime-path']) throw new Error('--runtime-path is only supported by --backend runtime.');
   if (positionals[0] === 'sessions') {
     for (const s of await listSessions()) console.log(clean(`${s.id}  ${s.updated}  ${s.cwd}`));
@@ -92,7 +94,7 @@ async function main() {
     const reasoning = v.reasoning || process.env.ZAI_REASONING || 'high';
     if (!['low','high','max'].includes(reasoning)) throw new Error('--reasoning must be low, high, or max.');
     const config = {reasoning, apiKey: process.env.ZAI_API_KEY, baseURL, model: v.model || process.env.ZAI_MODEL || 'glm-5.3-flash', maxTools};
-    process.stderr.write(accent('\n  Z.ai Workbench') + '  /  0.2.0\n');
+    process.stderr.write(accent('\n  Z.ai Workbench') + '  /  0.2.1\n');
     note(`  ${config.model}  |  ${profile}  |  reasoning: ${reasoning}\n  ${cwd}\n\nEndpoint: ${baseURL}\n${profile === 'general' ? 'Billing: separately metered API usage, not Coding Plan quota.' : 'Coding Plan endpoint selected. No metered API fallback. Eligibility details: README.'}\nPrompts and approved tool output are sent to this endpoint.\n${v['no-save'] ? 'Local session saving is off.' : `Conversations and tool results are saved locally in ${stateDir()}.`}\n`);
     if (process.env.ZAI_BASE_URL && interactive && (await ask('Send prompts and your API key to this custom endpoint? [y/N] ')).trim().toLowerCase() !== 'y') return;
     let session = v.resume ? await loadSession(v.resume, cwd) : newSession(cwd);

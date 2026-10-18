@@ -1,10 +1,10 @@
 # Z.ai Workbench
 
-A lightweight terminal for your existing ZCode runtime. Version 0.2.0 uses the installed, unchanged `zcode-app-cli` app-server by default, with its existing login and provider configuration. It streams answers without starting the full ZCode TUI. It shows immediate activity, an elapsed waiting indicator in styled terminals, and reasoning activity without exposing private reasoning text. Raw runtime diagnostic logs are suppressed by default to avoid leaking sensitive data. Workbench is independent community software and is not affiliated with Z.ai.
+A lightweight terminal for your existing ZCode runtime. Version 0.2.1 uses the installed, unchanged `zcode-app-cli` app-server by default, with its existing login and provider configuration. It streams answers without starting the full ZCode TUI. It shows immediate activity, an elapsed waiting indicator in styled terminals, and reasoning activity without exposing private reasoning text. Startup failures include the last meaningful redacted runtime diagnostic. Routine runtime logs stay hidden by default. Workbench is independent community software and is not affiliated with Z.ai.
 
 ## Requirements
 
-Install [Node.js 22 or newer](https://nodejs.org/en/download) and Git. Supported targets are macOS, Linux, and Windows PowerShell with Node installed. CI is configured for all three systems on Node 22 and 24. Remote CI must pass before claiming those jobs have been verified.
+Install [Node.js 22.19.0 or newer](https://nodejs.org/en/download) and Git. Supported targets are macOS, Linux, and Windows PowerShell with Node installed. CI is configured for all three systems on Node 22 and 24. Remote CI must pass before claiming those jobs have been verified.
 
 ## Install
 
@@ -70,6 +70,14 @@ Runtime mode uses the runtime's `guarded` mode. The runtime decides which action
 Runtime storage, sandbox behavior, tool execution, context management, and permissions belong to ZCode. Workbench does not add an OS sandbox or impose the direct-API backend's file protections on native tools. Runtime sessions may be saved by ZCode. `--no-save`, `--allow-read`, `--max-tools`, `--profile`, and `--reasoning` are direct-API-only and are rejected in runtime mode. `zai sessions` currently explains how to manage native history in ZCode; use a known native ID with `--resume`. `doctor` reports local settings only and does not inspect authentication or test runtime/network connectivity.
 
 No backend fallback is performed. A missing runtime, failed login, quota error, or protocol mismatch stops the request. The adapter currently targets ZCode Protocol 1; incompatible runtime versions fail with a protocol error.
+
+### Troubleshooting startup
+
+Runtime mode checks the Node.js version before launch and requires 22.19.0 or newer. If it reports an older version, install Node.js 24 LTS, reopen your terminal, and verify `node --version`. A `ZCODE_NODE` override does not upgrade the Node process already running Workbench.
+
+If the runtime exits before opening a session, Workbench shows a bounded, terminal-safe diagnostic such as a missing module or unsupported command. It removes known inherited secrets, credential assignments, authorization headers, URLs, and token-like strings before displaying it. Oversized lines are omitted instead of exposing partial credentials. No diagnostic file is written.
+
+For more context, run `zai --debug-runtime -p "Hello"`. This displays redacted complete diagnostic lines. Redaction is defense in depth, not a guarantee that arbitrary private prose or unknown short secrets can be detected: review all output before sharing it. Runtime failures never trigger an API fallback.
 
 ## Direct API mode (explicit opt-in)
 
