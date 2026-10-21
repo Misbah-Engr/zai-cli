@@ -1,0 +1,19 @@
+ZC Workbench
+Copyright 2026 Striking Lions
+
+ZC is an independent frontend, not an official Z.ai, OpenAI, Anthropic, or Apple product.
+Authored ZC code is distributed under the MIT license in LICENSE.
+
+The package installs zcode-app-cli 3.15.3-37 as a pinned dependency. That community
+client packages the official ZCode agent runtime and its compatibility layer. Its
+own license and the runtime's Apache-2.0 and third-party notices remain in that
+dependency. No upstream vendor source or user credential store is copied into the
+ZC source archive. Inspect the installed dependency's LICENSE and LICENSES files.
+
+The optional installers acquire an unmodified Node.js distribution with its own
+license notices. Runtime and engine bytes are downloaded at install time rather
+than embedded in the small ZC installation ZIP.
+
+Protocol reference: zai-org/ZCode, commit
+aac4755666d09fdcd70272fcf063c077a639015f.
+Client integration reference: kingsword09/zcode-cli, tag v3.15.3-37.

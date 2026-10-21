@@ -1,28 +1,53 @@
 {
-  "name": "zai-workbench-cli",
-  "version": "0.2.1",
-  "description": "A deliberate, permission-first coding assistant for Z.ai",
+  "name": "@striking-lions/zc",
+  "version": "0.2.0",
+  "description": "A focused terminal coding workspace for Z.ai and the ZCode runtime.",
   "type": "module",
+  "license": "MIT",
+  "author": "Striking Lions",
+  "engines": {
+    "node": ">=24.14.0"
+  },
   "bin": {
-    "zai": "src/cli.mjs"
+    "zc": "bin/zc.mjs"
   },
   "files": [
+    "bin",
     "src",
+    "scripts/build.mjs",
+    "docs",
     "README.md",
     "LICENSE",
-    "SECURITY.md"
+    "NOTICE",
+    "SECURITY.md",
+    "install",
+    "scripts/verify-runtime.mjs",
+    "scripts/restore-config.mjs"
   ],
-  "engines": {
-    "node": ">=22.19.0"
-  },
   "scripts": {
-    "test": "node --test",
-    "check": "node --check src/cli.mjs && node --test"
+    "start": "node bin/zc.mjs",
+    "demo": "node bin/zc.mjs demo",
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test.mjs",
+    "check": "npm run build && npm test",
+    "pack:check": "npm pack --dry-run",
+    "publish:github": "node scripts/publish.mjs",
+    "prepack": "node scripts/build.mjs",
+    "test:terminal": "python3 scripts/terminal-smoke.py"
   },
-  "license": "MIT",
+  "keywords": [
+    "zai",
+    "zcode",
+    "cli",
+    "terminal",
+    "coding-agent"
+  ],
+  "dependencies": {
+    "zcode-app-cli": "3.15.3-37"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Misbah-Engr/zai-cli.git"
+    "url": "git+https://github.com/Misbah-Engr/zai-cli.git"
   },
   "homepage": "https://github.com/Misbah-Engr/zai-cli#readme",
   "bugs": {

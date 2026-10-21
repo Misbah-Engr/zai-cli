@@ -1,0 +1,88 @@
+{
+  "release": "0.2.0",
+  "date": "2026-10-20",
+  "platform": "linux-x64",
+  "actualNode": "22.16.0",
+  "npm": "10.9.2",
+  "managedInstallerNode": "24.22.0",
+  "runtimeDependency": "zcode-app-cli@3.15.3-37",
+  "tests": {
+    "passed": 229,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "syntaxModules": 53,
+  "terminalSource": {
+    "fixture": true,
+    "entry": "/mnt/data/zc-rebuild/zcode-cli/bin/zc.mjs",
+    "exitCode": 0,
+    "checks": [
+      "streamed synthetic response rendered",
+      "mouse selection, deletion, undo/redo, wheel navigation exercised",
+      "quiet active turn survived multiple health intervals without stop or replay",
+      "explicit Esc cancelled the task",
+      "mouse range deletion verified in saved draft",
+      "resizing retained draft",
+      "terminal and archive locks restored"
+    ],
+    "modelRequests": 0,
+    "bytesCaptured": 100285
+  },
+  "rendererBenchmark": {
+    "fixture": true,
+    "messages": 400,
+    "characters": 449490,
+    "coldFrameMs": 296.221155,
+    "warmMedianMs": 5.919058000000007,
+    "warmP95Ms": 10.221184999999991,
+    "rssMB": 90.44921875
+  },
+  "packageVerification": "frontend package installed with synthetic dependency, not public upstream bytes",
+  "liveModelVerified": false,
+  "nativeWindowsVerified": false,
+  "nativeMacOSVerified": false,
+  "onlineInstallerVerified": false,
+  "remoteCiRun": false,
+  "githubPush": false,
+  "npmPublication": false,
+  "terminalInstalled": {
+    "fixture": true,
+    "entry": "/mnt/data/zc-test-artifacts/final-install.InDlAE/node_modules/@striking-lions/zc/bin/zc.mjs",
+    "exitCode": 0,
+    "checks": [
+      "streamed synthetic response rendered",
+      "mouse selection, deletion, undo/redo, wheel navigation exercised",
+      "quiet active turn survived multiple health intervals without stop or replay",
+      "explicit Esc cancelled the task",
+      "mouse range deletion verified in saved draft",
+      "resizing retained draft",
+      "terminal and archive locks restored"
+    ],
+    "modelRequests": 0,
+    "bytesCaptured": 100285
+  },
+  "installerTransactionFixture": {
+    "fixture": true,
+    "actualNode": "v22.16.0",
+    "simulatedEngineVersionProbe": "v24.22.0",
+    "runtimeDependency": "synthetic fixture, not the upstream package",
+    "checks": [
+      "fresh staged install commits a working zc launcher",
+      "paths with spaces and apostrophes are quoted",
+      "theme retained and managed backend selected",
+      "user PATH additions written",
+      "launcher-switch failure restores ZC preferences",
+      "npm failure retains the previous launcher and preferences",
+      "synthetic credential sentinel unchanged",
+      "temporary install stages removed"
+    ],
+    "notTested": [
+      "Node download",
+      "public npm registry",
+      "real ZCode dependency",
+      "native Windows installer",
+      "OAuth"
+    ]
+  }
+}

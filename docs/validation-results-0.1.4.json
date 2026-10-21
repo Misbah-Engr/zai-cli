@@ -1,0 +1,37 @@
+{
+  "release": "0.1.4",
+  "date": "2026-10-19",
+  "node": "22.16.0",
+  "npm": "10.9.2",
+  "platform": "linux-x64",
+  "tests": {
+    "passed": 191,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "syntax_modules": 42,
+  "runtime_tests": "synthetic subprocess fixture, not official runtime",
+  "installed_terminal": {
+    "kind": "installed frontend with synthetic runtime, not live model",
+    "node": "v22.16.0",
+    "checks": [
+      "Default Enter denies full access",
+      "Explicit consent enables acknowledged YOLO in native session",
+      "Runtime-mandatory permission remains interactive in YOLO",
+      "Switch back to guarded policy in same conversation",
+      "Escape declines consent",
+      "Resize and clean exit restore terminal",
+      "Saved mode remains ask after YOLO switches"
+    ],
+    "exit_code": 0,
+    "canonical_restored": true,
+    "echo_restored": true,
+    "alternate_screen_restored": true,
+    "bracketed_paste_restored": true,
+    "config_mode_after": "ask"
+  },
+  "live_yolo_verified": false,
+  "github_push": false,
+  "npm_publication": false
+}

@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-18",
+  "package": "@striking-lions/zc@0.1.1",
+  "platform": "linux-x64",
+  "node": "22.16.0",
+  "npm": "10.9.2",
+  "tests": {
+    "passed": 99,
+    "failed": 0,
+    "skipped": 0
+  },
+  "javascript_modules_syntax_checked": 34,
+  "terminal": {
+    "exit_code": 0,
+    "startup_model_picker": true,
+    "model_confirmed": true,
+    "resized": "120x32 to 80x24",
+    "alternate_screen_restored": true,
+    "bracketed_paste_restored": true,
+    "draft_saved": true,
+    "fixture_only": true,
+    "live_model_tested": false
+  },
+  "package_smoke": {
+    "offline_global_install": true,
+    "version": "0.1.1",
+    "offline_demo_exit_code": 0
+  },
+  "native_account_authentication_implemented": false,
+  "live_native_tested": false,
+  "live_provider_tested": false,
+  "github_pushed": false,
+  "remote_ci_executed": false
+}
