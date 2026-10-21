@@ -1,6 +1,11 @@
 node_modules/
+coverage/
+dist/
+*.tgz
+*.zip
+*.bundle
 .env
 .env.*
-*.tgz
-coverage/
+*.log
 .DS_Store
+runtime/

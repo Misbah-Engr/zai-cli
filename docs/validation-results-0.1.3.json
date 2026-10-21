@@ -1,0 +1,43 @@
+{
+  "release": "0.1.3",
+  "date": "2026-10-19",
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "node": "22.16.0",
+    "npm": "10.9.2"
+  },
+  "tests": {
+    "passed": 155,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "syntax_modules": 40
+  },
+  "baseline_0_1_2_tests_passed": 143,
+  "package_checks": {
+    "isolated_install": true,
+    "installed_version": "0.1.3",
+    "help": true,
+    "offline_demo": true,
+    "headless_adapter_with_synthetic_child": true
+  },
+  "upstream": {
+    "preferred_client": "3.15.3-37",
+    "accepted_clients": [
+      "3.15.3-36",
+      "3.15.3-37"
+    ],
+    "runtime": "0.16.9",
+    "release_and_source_inspected": true,
+    "actual_upstream_installed_locally": false,
+    "npm_lookup_error": "EAI_AGAIN",
+    "authenticated_test": false
+  },
+  "notes": [
+    "No upstream credentials were accessed.",
+    "Synthetic fixture reports client version 3.15.3-37; not real release execution.",
+    "No authenticated recovery or sustained renewal claim.",
+    "No GitHub push or registry publication."
+  ]
+}

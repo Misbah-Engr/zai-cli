@@ -1,186 +1,247 @@
-# Z.ai Workbench
+# ZC Workbench
 
-A lightweight terminal for your existing ZCode runtime. Version 0.2.1 uses the installed, unchanged `zcode-app-cli` app-server by default, with its existing login and provider configuration. It streams answers without starting the full ZCode TUI. It shows immediate activity, an elapsed waiting indicator in styled terminals, and reasoning activity without exposing private reasoning text. Startup failures include the last meaningful redacted runtime diagnostic. Routine runtime logs stay hidden by default. Workbench is independent community software and is not affiliated with Z.ai.
+**Your project. One terminal. One command.**
 
-## Requirements
+ZC is an independent terminal coding workspace by **Striking Lions**. It installs a pinned ZCode client as its runtime dependency and presents a separate editor, conversation view, tool activity, session browser, and permission controls.
 
-Install [Node.js 22.19.0 or newer](https://nodejs.org/en/download) and Git. Supported targets are macOS, Linux, and Windows PowerShell with Node installed. CI is configured for all three systems on Node 22 and 24. Remote CI must pass before claiming those jobs have been verified.
+**0.2.0 integration preview.** This release changes the editor, long-turn monitoring, transcript storage, and installation layout. Local tests and a real POSIX terminal exercise use synthetic runtimes, not live Z.ai credentials. Read [what was actually tested](docs/VALIDATION.md) before distributing this as a stable release. There is no affiliation with Z.ai, Apple, Anthropic, or OpenAI.
 
-## Install
+![Actual light renderer with synthetic conversation](docs/workbench-light.png)
 
-Repository: https://github.com/Misbah-Engr/zai-cli. This package has not been published to npm.
+*The preview is generated from the real renderer. Its task and tool results are synthetic, not evidence of live inference.*
 
-### macOS and Linux
+## Install from this repository
 
-```sh
+Requires Git and Node.js **24.14 or newer**. This source is
+`@striking-lions/zc` 0.2.0 with the `zc` command, not the older
+`zai-workbench-cli` 0.2.1 package with the `zai` command. The older code remains
+in Git history after the migration is merged.
+
+**macOS, Linux, and WSL:**
+
+```bash
 git clone https://github.com/Misbah-Engr/zai-cli.git
 cd zai-cli
-npm ci
-npm test
 npm install --global .
-zai --help
+zc
 ```
 
-### Windows PowerShell
+**Windows PowerShell:**
 
 ```powershell
 git clone https://github.com/Misbah-Engr/zai-cli.git
 Set-Location zai-cli
-npm ci
-npm test
-npm install --global .
-zai --help
+npm.cmd install --global .
+zc.cmd
 ```
 
-An alternative on each system is:
+These main-branch commands apply after the ZC migration is merged. While reviewing
+a pull request, use its branch instead. npm installs the pinned coding runtime
+as a dependency. A separately installed `zcode` command is not required. Use
+`zc login` for account authorization. An existing external-runtime override can
+be replaced with `zc config managed`.
 
-```sh
-npm install --global github:Misbah-Engr/zai-cli
+For a user-owned managed installation from this checkout:
+
+```bash
+npm pack
+bash install/install.sh --package "$PWD/striking-lions-zc-0.2.0.tgz" --add-path
 ```
 
-Use an npm global directory writable by your user. Do not run the assistant with administrator or root permissions. If `zai` is not found, add npm's global binary directory to PATH or run `node src/cli.mjs --help` from the checkout.
-
-To update a checkout: `git pull --ff-only`, `npm ci`, `npm test`, then `npm install --global .`. To uninstall: `npm uninstall --global zai-workbench-cli`. Local sessions remain until you delete them yourself.
-
-## Runtime setup (default)
-
-Install `zcode-app-cli` using its official instructions. Run `zcode` once and complete its own login and provider setup. If it already works in this terminal, there is no new key to configure in Workbench:
-
-```sh
-zai doctor
-zai --cwd ./my-project
-zai -p "Explain the architecture"
-zai --resume NATIVE_SESSION_ID
-```
-
-Workbench starts `zcode app-server` as a subprocess and communicates over its native NDJSON protocol. It does not read, copy, decrypt, or reimplement runtime credentials, impersonate provider client headers, or issue model HTTP calls in runtime mode. The genuine runtime handles authentication and model requests. Account eligibility, subscription limits, and service policies still apply; using the runtime is not a guarantee of quota or access.
-
-The model and provider default to the runtime's existing configuration. To explicitly select a configured model, use `--model PROVIDER/MODEL` with the runtime's exact provider and model IDs. This option does not rewrite the saved workspace default. API-specific environment variables are not used by Workbench's runtime frontend; the child process still inherits your environment and may interpret variables according to its own configuration.
-
-Use `--runtime-path /absolute/path/to/zcode` only for a trusted installed launcher. It must be an absolute existing file. Never point this at a program supplied by an untrusted repository. This is executable selection, not a shell command string. Normal operation uses the installed `zcode` on PATH, so keep PATH trusted. On Windows, the adapter avoids executing command-shell shims. If automatic discovery fails, point to the official JavaScript launcher installed by npm:
+PowerShell equivalent:
 
 ```powershell
-zai --runtime-path "$((npm prefix -g).Trim())\node_modules\zcode-app-cli\bin\zcode.js"
+npm.cmd pack
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install\install.ps1 -Package "$PWD\striking-lions-zc-0.2.0.tgz" -AddPath
 ```
 
-A `.js`, `.cjs`, or `.mjs` launcher is invoked with Node directly, with separate arguments and no shell interpolation. `.cmd` and `.bat` overrides are rejected. Paths with spaces remain a single argument when quoted as shown.
+Both managed installers acquire an isolated Node engine and the runtime
+dependencies. They are not offline binary installers. No npm registry
+publication of `@striking-lions/zc` is claimed.
 
-Runtime mode uses the runtime's `guarded` mode. The runtime decides which actions need approval, and it may allow some reads or actions without asking. Workbench displays native permission requests and accepts only one-time approvals; it does not grant permanent permission rules. Noninteractive permission requests are denied. Unknown interaction methods fail closed; structured user-input requests are cancelled rather than guessed. A task requiring an unsupported interaction may need to be continued in `zcode`.
+## Install once
 
-Runtime storage, sandbox behavior, tool execution, context management, and permissions belong to ZCode. Workbench does not add an OS sandbox or impose the direct-API backend's file protections on native tools. Runtime sessions may be saved by ZCode. `--no-save`, `--allow-read`, `--max-tools`, `--profile`, and `--reasoning` are direct-API-only and are rejected in runtime mode. `zai sessions` currently explains how to manage native history in ZCode; use a known native ID with `--resume`. `doctor` reports local settings only and does not inspect authentication or test runtime/network connectivity.
+### Recommended: the supplied installation bundle
 
-No backend fallback is performed. A missing runtime, failed login, quota error, or protocol mismatch stops the request. The adapter currently targets ZCode Protocol 1; incompatible runtime versions fail with a protocol error.
+Extract `zc-0.2.0-install.zip`. It contains the npm package, two inspectable installers, and checksums. Close an existing ZC process intentionally before upgrading; exiting an active session can cancel its current task.
 
-### Troubleshooting startup
+**macOS, Linux, and WSL:**
 
-Runtime mode checks the Node.js version before launch and requires 22.19.0 or newer. If it reports an older version, install Node.js 24 LTS, reopen your terminal, and verify `node --version`. A `ZCODE_NODE` override does not upgrade the Node process already running Workbench.
-
-If the runtime exits before opening a session, Workbench shows a bounded, terminal-safe diagnostic such as a missing module or unsupported command. It removes known inherited secrets, credential assignments, authorization headers, URLs, and token-like strings before displaying it. Oversized lines are omitted instead of exposing partial credentials. No diagnostic file is written.
-
-For more context, run `zai --debug-runtime -p "Hello"`. This displays redacted complete diagnostic lines. Redaction is defense in depth, not a guarantee that arbitrary private prose or unknown short secrets can be detected: review all output before sharing it. Runtime failures never trigger an API fallback.
-
-## Direct API mode (explicit opt-in)
-
-Use `--backend api` to select the original OpenAI-compatible Chat Completions implementation. It is independent of the runtime login. The optional Anthropic transport source module is not selected by the CLI. Choosing an endpoint or protocol does not by itself change account eligibility.
-
-## Configure your API key
-
-The CLI reads credentials from the environment and never writes the key to its configuration or prints it. Do not put credentials into prompts, repository files, or command-line arguments.
-
-macOS and Linux, Bash:
-
-```sh
-read -rsp 'Z.ai API key: ' ZAI_API_KEY; echo
-export ZAI_API_KEY
-zai --backend api
+```bash
+bash install.sh --add-path
 ```
 
-Windows PowerShell:
+**Windows PowerShell:**
 
 ```powershell
-$secret = Read-Host 'Z.ai API key' -AsSecureString
-$env:ZAI_API_KEY = [System.Net.NetworkCredential]::new('', $secret).Password
-zai --backend api
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -AddPath
 ```
 
-These examples set the key for the current terminal session. Use your operating system's secret manager for longer-lived credential management.
+The PowerShell policy override applies to that installer process, not the machine policy. Review the script before executing it. Native Windows execution of this installer has not been tested in the current build environment.
 
-## Choose the right API profile
+The installers acquire an isolated **Node.js 24.22.0** from the official Node distribution, verify its archive against the HTTPS checksum manifest, and install ZC plus **zcode-app-cli 3.15.3-37**. First installation needs internet access to Node and npm. The small installation ZIP does not contain the Node binaries or an offline copy of all dependencies. Checksums are not a code-signing certificate.
 
-Within direct API mode, the Coding Plan endpoint is the default. Selecting it does not establish eligibility, guarantee subscription coverage, or bypass restrictions. There is no automatic fallback to the separately billed general API. You can override the profile with `--profile` or `ZAI_PROFILE`. Successful access still depends on your account and provider eligibility.
+They do not replace system Node, require administrator privileges, or delete upstream credentials. They use a user-owned, versioned installation directory and retain the previous launcher and ZC preferences. The installer selects the managed native backend in guarded launch mode. A prior theme preference is retained. It does not retain YOLO as a global default.
 
-- `general` (explicit opt-in with `--profile general`): `https://api.z.ai/api/paas/v4`. Uses separately metered API credits. A Coding Plan subscription does not imply these calls are covered.
-- `coding` (default): `https://api.z.ai/api/coding/paas/v4`. This is the documented OpenAI Chat Completions endpoint for Coding Plan. Z.ai restricts subscription benefits to officially supported tools. This independent CLI is not on that list. Verify eligibility with Z.ai before using this profile. Technical compatibility does not establish permission or guaranteed access.
+Open a new terminal after installation:
 
-The endpoint and billing notice are displayed before the first request. Read Z.ai's [supported tools and endpoints](https://docs.z.ai/devpack/tool/others) and [usage policy](https://docs.z.ai/devpack/usage-policy).
-
-The default model is `glm-5.3-flash`, with high reasoning effort for a balance of depth and responsiveness. Use `--model glm-5.3 --reasoning high` for harder tasks, or `--reasoning max` for deeper work. Use `--reasoning low` when lower reasoning depth is an acceptable tradeoff for latency. Low reasoning does not disable model thinking. Model response speed depends on provider load and task complexity. Z.ai currently routes older `glm-4.7` requests to `glm-5.3-flash`; this CLI names the current model explicitly. Select a model available to your account with `--model MODEL` or `ZAI_MODEL`. Model availability and pricing can change.
-
-## Direct API examples
-
-```sh
-zai --backend api --cwd ./my-project
-zai --backend api -p "Explain how a binary search works"
-zai --backend api --allow-read -p "Review the architecture in src"
-zai --backend api --model glm-5.3-flash --max-tools 12
-zai --backend api sessions
-zai --backend api --resume SESSION_ID --cwd ./my-project
-zai --backend api --no-save
-zai --backend api doctor
+```bash
+cd /path/to/your/project
+zc
 ```
 
-`--allow-read` explicitly approves supported workspace reads and transmission of their results to the selected API for this invocation. Without it, each read asks. Writes and commands always require interactive approval. Noninteractive invocations cannot approve them and receive denied tool results instead. There is deliberately no unrestricted `--yes` mode.
+No `npx`, separate `zcode` setup command, runtime path, or authentication environment variable is needed for normal launches. On a fresh account, connect once with:
 
-`-p` runs one prompt and exits. Standard output contains model text; diagnostics, status, and approval prompts go to standard error. Noninteractive use requires `-p`; stdin is not implicitly uploaded. Exit status is 0 on success, 1 on errors, and 130 for a cancelled single prompt. Use `--plain` or `NO_COLOR=1` to disable color.
+```bash
+zc login
+```
 
-Interactive commands (both backends):
+On an SSH server, `zc login` prints an authorization URL for your local browser. Existing account entitlement is still required. The runtime handles authentication; ZC does not turn a subscription into unlimited model access.
 
-- `/help`: Show commands
-- `/new`: Start a new conversation without deleting earlier sessions
-- `/status`: Show the active backend settings and session ID
-- `/exit`: Quit
+### Existing Node installation
 
-End a line with a backslash to continue a multiline prompt. The terminal shows elapsed waiting time before the first streamed text. Ctrl+C cancels an active request or command. Actions already completed remain in place. Review the working tree before continuing.
+With Node.js **24.14 or newer**, the ordinary npm package is also supported:
 
-## Direct API configuration
+```bash
+npm install --global ./striking-lions-zc-0.2.0.tgz
+zc
+```
 
-| Variable | Purpose |
+Use `npm.cmd` and `zc.cmd` in PowerShell when npm's script shims encounter execution-policy restrictions. This command installs the runtime dependency automatically. It does not install a Node engine. For an upgrade from a preview configured with an external runtime, `zc config managed` selects the integrated backend.
+
+This package has not been published to the npm registry as part of this delivery. Do not install a similarly named registry package. The dependency on `zcode-app-cli` is pinned; its transitive dependencies follow that package's dependency ranges. Each installer release retains the lockfile npm actually resolved. A fully locked offline dependency bundle has not been produced here.
+
+## Start working
+
+```bash
+zc                         # Open the current project
+zc /path/to/project        # Open another project
+zc resume                  # Resume this project's last recorded conversation
+zc --resume SESSION_ID     # Resume an exact session
+zc demo                    # Offline interface preview
+zc doctor                  # Local installation checks, not a live model test
+```
+
+On the first upgrade from 0.1.x, `zc resume` opens the project session picker when there is no new-style last-session record. No old prompt is automatically sent. A blank session opened and closed without a task does not replace the last meaningful conversation.
+
+Choose an available model with `/model`. The picker uses runtime-advertised IDs rather than invented provider names. ZC remembers the model from a used conversation for the next project session when that exact model remains available.
+
+Give the agent a concrete task, such as:
+
+```text
+Inspect the parser and its tests. Implement bounded buffering for incomplete frames,
+keep the public interface unchanged, and run the relevant tests. Report the actual
+commands and results, then summarize the diff.
+```
+
+The launch policy is **guarded**, not a promise to ask before every command. To request full access for the current native session:
+
+```text
+/mode yolo
+```
+
+Review the confirmation, select **Enable YOLO**, then press Enter. The **YOLO / FULL ACCESS** label appears after runtime acknowledgment. `/mode ask` returns to guarded policy. Neither command resubmits a task. Mandatory upstream confirmations and planning restrictions can still apply. See [full access](docs/FULL-ACCESS.md).
+
+## Editing that behaves like an editor
+
+| Interaction | Result |
 | --- | --- |
-| `ZAI_API_KEY` | Required API credential, sent only as a bearer header |
-| `ZAI_PROFILE` | `coding` by default; `general` requires explicit selection |
-| `ZAI_MODEL` | Model ID; defaults to `glm-5.3-flash` |
-| `ZAI_REASONING` | `low`, `high` (default), or `max` for GLM-5.2/5.3 |
-| `ZAI_BASE_URL` | Optional OpenAI-compatible base URL, without `/chat/completions` |
-| `ZAI_HOME` | Local session directory; defaults to `~/.zai-workbench` |
-| `NO_COLOR` | Disable ANSI color |
+| Click inside the prompt | Position the caret |
+| Drag inside the prompt | Select a text range |
+| Double-click a prompt word | Select the word |
+| Shift + arrows, Home, End | Extend a selection |
+| Ctrl+A | Select the entire draft |
+| Backspace, Delete, or typing | Remove or replace the selected range |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+| Alt+Enter or Ctrl+J | Insert a newline |
+| Enter | Send, only when not blocked by a dialog or active task |
+| Up / Down | Move through prompt lines; never recall history |
+| Ctrl+R or Alt+Up / Alt+Down | Explicit prompt history |
+| Ctrl+C on a selection | Request terminal clipboard copy |
+| Ctrl+X on an editor selection | Cut the selected range |
 
-A custom URL receives your API key and conversation. Only use a provider you trust. HTTPS is required except on loopback for testing. Redirects, URL credentials, query parameters, and fragments are rejected. Interactive custom endpoints require confirmation; explicitly setting the variable is consent in noninteractive mode.
+Bracketed paste does not submit a task or approve an action. The prompt accepts up to 64,000 characters. Undo is bounded to 100 snapshots and a two-million-character budget. Existing sensitive values are redacted when drafts are saved; the active editor shows the text you are editing.
 
-## Privacy and security
+Clipboard transfer uses OSC 52 on an explicit copy/cut gesture. Support depends on your terminal and SSH/tmux configuration. ZC does not silently change the terminal's clipboard permissions. Use `/mouse off` and the terminal's native selection, or `/export`, when clipboard transfer is unavailable.
 
-Read [SECURITY.md](SECURITY.md) before granting command access.
+## Read the entire retained conversation
 
-Both backends send prompts and tool context to their configured provider. The remaining storage and file-tool details below describe direct API mode only; runtime mode follows ZCode's own policies. Tool requests originate from a model and may be wrong. Repository instructions and command output are untrusted. Read permission is also permission to transmit the selected content to the provider.
+The mouse wheel and Page Up/Page Down scroll the conversation, not the prompt history. Click transcript text to focus it, then use arrows to move through the view. Press Enter to focus the editor again. Ctrl+Home jumps to the oldest archived entry; Ctrl+End returns to live output. New events do not forcibly pull a scrolled view back to the bottom.
 
-Session JSON files contain conversation and tool output in plaintext. They are saved outside the project, with restrictive POSIX creation modes where supported. Windows access is governed by your user profile's ACLs. Use `--no-save` for sensitive sessions, or a secured `ZAI_HOME`. The program cannot stop you from pasting secrets in prompts or ordinary source files. Review what you share.
+Use **Ctrl+F** or `/search words` to search the visible transcript archive. Search returns up to 100 matches. Click a tool row to expand its output; Ctrl+O expands or collapses all currently displayed tool details.
 
-Built-in file operations enforce workspace boundaries and protect common credential paths and repository internals. These checks are defense in depth, not comprehensive secret detection or an OS security boundary. Approved shell commands run with your user's permissions and can access the network and files outside the workspace. Use a disposable container or a restricted OS account for untrusted repositories.
+ZC 0.2.0 adds an append-only local transcript with paged, byte-bounded history windows. The current screen still uses a bounded working set, but older archived entries are accessible instead of being silently discarded. `/export` includes the archive, not only the current screen.
 
-## Development
+This is a **visible transcript**, not a raw protocol recording. Assistant messages are bounded to 120,000 characters and individual displayed tool results to 24,000 characters, with truncation markers. Runtime-owned artifacts may contain fuller tool output. Local files remain on disk until you remove them. History already discarded by an older frontend cannot be recreated unless the upstream resume snapshot still contains it. Archive I/O or corruption errors are surfaced, not silently repaired by overwriting the original.
 
-```sh
-npm ci
-npm run check
-npm pack --dry-run
-node src/cli.mjs --help
+## Long tasks and recovery
+
+The old native inactivity watchdog called `session/stop` after a quiet interval. This release removes that behavior.
+
+When a native turn is quiet, ZC queries `session/read` and paginated `session/events`. A running task keeps waiting. A missed, matching completion can be recovered from the event log. An unanswered health query displays **uncertain**, not a fabricated successful or failed task. An idle session without a matching completion is blocked for inspection. No quiet interval automatically resends a prompt or stops the task.
+
+```text
+/status       Inspect the runtime's current session state
+/reconnect    Reopen the selected session without resending an old prompt
 ```
 
-Tests use local mocks, mock runtime subprocesses, and temporary workspaces. They do not require or spend API credits. A live account smoke test still needs a valid key and an eligible endpoint. The source is organized into provider transport, agent loop, workspace tools, session storage, and terminal interface modules.
+Use Escape to stop a task explicitly. Ctrl+C twice exits. An approval dialog waits for your decision rather than being treated as model inactivity. Upstream model/network timeouts, authentication failures, process crashes, or server-side limits can still occur. This change does not promise uninterrupted eight-hour work or execution after the frontend and its runtime are closed.
 
-Model references: [Coding Plan overview](https://docs.z.ai/devpack/overview) and [GLM-5.3](https://docs.z.ai/guides/llm/glm-5.3).
+The supported, full-featured backend for this behavior is **native**, which is the default. The older `native-stream` backend remains an advanced compatibility path with its own fixed tool exclusions and deadlines; it does not provide interactive ZC approvals.
 
-Protocol references: [Chat Completion](https://docs.z.ai/api-reference/llm/chat-completion), [Streaming Messages](https://docs.z.ai/guides/capabilities/streaming), and [Tool Integration](https://docs.z.ai/devpack/tool/others).
+## Commands
 
-## License
+| Command | Purpose |
+| --- | --- |
+| `/login` | Suspend the interface, use runtime login, and return to this workspace |
+| `/model` | Runtime model and reasoning-level picker |
+| `/mode` | Show the acknowledged permission state |
+| `/mode yolo` / `/mode ask` | Full-access confirmation / return to guarded policy |
+| `/sessions` / `/resume ID` | Select an upstream conversation |
+| `/new` | Open a new conversation without deleting files |
+| `/status` / `/reconnect` | Session inspection / explicit connection recovery |
+| `/search words` | Search archived visible text |
+| `/diff` | Git changes, including pre-existing user changes |
+| `/compact` | Request upstream context compaction |
+| `/export [path]` | Export the archived transcript, without overwriting existing files |
+| `/theme auto`, `light`, `dark`, `mono` | Theme selection |
+| `/mouse on` / `/mouse off` | Application mouse handling / release mouse to the terminal |
+| `/help` / `/quit` | Controls / orderly exit |
 
-MIT. Independent community software. Z.ai names and trademarks belong to their respective owners.
+Auto theme queries the terminal background. Without an answer, it inherits the terminal's default foreground rather than guessing pale text on white. Explicit light and dark themes paint their own background and use tested high-contrast text roles. Mouse/selection support still depends on the terminal forwarding standard mouse reports. The test matrix is not an accessibility certification.
+
+## Advanced configuration
+
+Configuration lives at `$ZC_HOME/config.json` when set, otherwise under the platform state directory. On Linux/macOS the default is `~/.local/state/zc`; on Windows it is `%LOCALAPPDATA%\StrikingLions\zc`.
+
+The isolated installer uses `~/.local/share/zc` for program releases and engines, and `~/.local/bin/zc` for the launcher. Windows uses `%LOCALAPPDATA%\StrikingLions\ZC` and `%USERPROFILE%\.local\bin\zc.cmd`. These program files are distinct from the upstream runtime's account/session stores. See [architecture](docs/ARCHITECTURE.md) and [security](SECURITY.md).
+
+Direct API access remains opt-in:
+
+```bash
+zc config backend zai
+```
+
+Set `ZAI_API_KEY` securely in your environment. ZC does not save it in configuration, automatically read `.env` for its direct backend, or silently fall back to API-key billing. `zc help auth` contains the account boundary.
+
+An external runtime is an advanced override, not a normal setup step:
+
+```bash
+zc config runtime /absolute/path/to/zcode
+zc config managed
+```
+
+## Build and validate
+
+The authored frontend and synthetic regression tests have no development npm dependency requirement. They can be inspected and tested before runtime installation:
+
+```bash
+node scripts/build.mjs
+node scripts/test.mjs
+python3 scripts/terminal-smoke.py
+npm pack
+```
+
+The frontend tests ran locally on Linux with Node 22.16.0. The managed production runtime requires Node 24.14 or newer. CI is configured for Linux, macOS, and Windows with Node 24.14.0 and 24.x, but remote CI did not run for this delivery. See [validation](docs/VALIDATION.md) for exact evidence and unverified boundaries.
+
+Source, install ZIP, package, checksums, and validation records are separate release artifacts. Publishing instructions are in [PUBLISHING.md](docs/PUBLISHING.md). No remote repository or npm release was published as part of this build.
